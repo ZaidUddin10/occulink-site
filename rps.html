@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Follow Up Care Plan</title>
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/bootstrap@5.1.1/dist/css/bootstrap.min.css"
+    />
+
+    <style>
+      .logo {
+        width: 150px;
+      }
+
+      .condition-table {
+        white-space: pre-line;
+      }
+
+      .noteTable > table > thead > tr:nth-child(2) > th:nth-child(4) {
+        width: 40%;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="app">
+      <b-app>
+        <b-loader v-if="loading"></b-loader>
+        <b-header
+          :fields="headerFields"
+          :data="headerData"
+          :logo-url="carePlanData && carePlanData.practiceLogoUrl"
+        >
+        </b-header>
+        <div style="padding: 0 10px">
+          <h3 class="text-center">Follow Up Care Plan</h3>
+
+          <div id="extraTableID" style="display: none">
+            <b-table
+              type="blue-purple"
+              :columns="scheduleTableColumns"
+              :rows="carePlanData ? [carePlanData] : null"
+            >
+            </b-table>
+
+            <b-table
+              title="Patient Caregiver/DPOA"
+              type="green"
+              :columns="careGiversTableColumns"
+              :rows="careGivers"
+            ></b-table>
+
+            <b-table
+              title="Complete Problem List"
+              type="purple"
+              :columns="extraColumns"
+              :rows="extras"
+            >
+            </b-table>
+
+            <b-table
+              title="Preventative Care"
+              type="green"
+              :columns="preventativeColumns"
+              :rows="preventative"
+            >
+            </b-table>
+
+            <b-table
+              title="Psychosocial Assessment"
+              type="orange"
+              :columns="psychosocialColumns"
+              :rows="psychosocial"
+            >
+            </b-table>
+
+            <b-table
+              title="General Questions"
+              type="green"
+              :columns="generalQuestionTablecolumns"
+              :rows="generalQuestions"
+            ></b-table>
+
+            <b-table
+              title="Functional Assessment"
+              type="light-blue"
+              :columns="psychosocialColumns"
+              :rows="functionalAssessment"
+            >
+            </b-table>
+
+            <b-table
+              title="Community and/or Social Services Ordered"
+              type="pink"
+              :columns="psychosocialColumns"
+              :rows="services"
+            >
+            </b-table>
+
+            <b-table
+              title="Chronic Condition #1 - Goals and Interventions"
+              type="green"
+              :columns="psychosocialColumns"
+              :rows="chronicOneCodes"
+            >
+            </b-table>
+
+            <b-table
+              title="Chronic Condition #2 - Goals and Interventions"
+              type="green"
+              :columns="psychosocialColumns"
+              :rows="chronicTwoCodes"
+            >
+            </b-table>
+
+            <b-table
+              title="Providers"
+              type="pink-purple"
+              :columns="providersTableColumns"
+              :rows="providers"
+            >
+            </b-table>
+
+            <b-table
+              title="Medications"
+              type="light-blue"
+              :columns="medicationsTableColumns"
+              :rows="medications"
+              class="noteTable"
+            >
+              <template #empty-state>No Active Medications</template>
+            </b-table>
+
+            <b-table
+              title="OTC Medications"
+              type="jade"
+              v-if="otcMeds.length > 0"
+              :columns="otcMedsTableColumns"
+              :rows="otcMeds"
+              class="noteTable"
+            >
+            </b-table>
+
+            <b-table
+              title="Inactive Medications"
+              type="orange"
+              v-if="inactiveMeds.length > 0"
+              :columns="inactiveMedsTableColumns"
+              :rows="inactiveMeds"
+              class="noteTable"
+            >
+            </b-table>
+
+            <div id="allergiesTable" style="display: none">
+              <b-table
+                title="Drug Allergies"
+                type="yellow"
+                :columns="allergiesTableColumns"
+                :rows="allergies"
+              >
+              </b-table>
+            </div>
+
+            <b-table
+              title="Medication List Review"
+              type="yellow"
+              :columns="psychosocialColumns"
+              :rows="medicationReview"
+            >
+            </b-table>
+
+            <b-table
+              title="Does the patient have any questions or requests for their provider?"
+              type="purple"
+              :columns="patientMessagesTableColumns"
+              :rows="patientMessages"
+            >
+              <template #empty-state
+                >The patient does not have any questions for their
+                provider</template
+              >
+            </b-table>
+
+            <b-table
+              title="Care Plan Reviewed and Shared with Patient"
+              type="pink"
+              :columns="psychosocialColumns"
+              :rows="careplanReviewed"
+            >
+            </b-table>
+
+            <b-table
+              title="Care Plan Reviewed By"
+              type="orange"
+              :columns="psychosocialColumns"
+              :rows="careplanReviewedBy"
+            >
+            </b-table>
+          </div>
+
+          <b-table
+            type="blue-purple"
+            :columns="scheduleTableColumns"
+            :rows="carePlanData ? [carePlanData] : null"
+          >
+          </b-table>
+          <b-table
+            title="Patient Caregiver/DPOA"
+            type="green"
+            :columns="careGiversTableColumns"
+            :rows="careGivers"
+          ></b-table>
+
+          <b-table
+            title="Providers"
+            type="pink-purple"
+            :columns="providersTableColumns"
+            :rows="providers"
+          >
+          </b-table>
+
+          <b-table
+            title="Medications"
+            type="light-blue"
+            :columns="medicationsTableColumns"
+            :rows="medications"
+            class="noteTable"
+          >
+            <template #empty-state>No Active Medications</template>
+          </b-table>
+
+          <b-table
+            title="Inactive Medications"
+            type="orange"
+            v-if="inactiveMeds.length > 0"
+            :columns="inactiveMedsTableColumns"
+            :rows="inactiveMeds"
+            class="noteTable"
+          >
+          </b-table>
+
+          <b-table
+            title="OTC Medications"
+            type="jade"
+            v-if="otcMeds.length > 0"
+            :columns="otcMedsTableColumns"
+            :rows="otcMeds"
+            class="noteTable"
+          >
+          </b-table>
+
+          <div id="allergiesTable" style="display: none">
+            <b-table
+              title="Drug Allergies"
+              type="yellow"
+              :columns="allergiesTableColumns"
+              :rows="allergies"
+            >
+            </b-table>
+          </div>
+
+          <b-table
+            title="Conditions"
+            type="pink"
+            class="condition-table"
+            :columns="conditionsTableColumns"
+            :rows="conditions"
+          ></b-table>
+
+          <b-table
+            title="General Questions"
+            type="green"
+            :columns="generalQuestionTablecolumns"
+            :rows="generalQuestions"
+          ></b-table>
+
+          <b-table
+            title="Does the patient have any questions or requests for their provider?"
+            type="purple"
+            :columns="patientMessagesTableColumns"
+            :rows="patientMessages"
+          >
+            <template #empty-state
+              >The patient does not have any questions for their
+              provider</template
+            >
+          </b-table>
+
+          <b-table
+            v-if="carePlanData && carePlanData.notes"
+            type="yellow"
+            :columns="notesColumns"
+            :rows="carePlanData ? [carePlanData] : null"
+          ></b-table>
+        </div>
+      </b-app>
+    </div>
+
+    <script src="https://unpkg.com/vue@3.2.20/dist/vue.global.js"></script>
+
+    <script src="https://elenchos.quickbase.com/db/brhfzywuv?a=dbpage&pageID=11"></script>
+
+    <!-- <script src="../common/common.js"></script>
+  <script src="./testdata.js"></script> -->
+    <!-- <script src="./nodata.js"></script> -->
+
+    <script>
+      const { ref, computed, createApp, onMounted } = Vue;
+
+      // Define the data structure
+      const FieldMaps = {
+        carePlan: {
+          8: "name",
+          25: "dateOfBirth",
+          30: "icdTen",
+          28: "lastOfficeVisit",
+          29: "nextOfficeVisit",
+          41: "pharmacyName",
+          42: "pharmacyPhoneNumber",
+          55: "practiceLogoUrl",
+          27: "activityName",
+          22: "activityAssignedTo",
+          20: "activityLastWorkDate",
+          69: "emergencyRoom",
+          70: "assistiveDevices",
+          71: "notes",
+        },
+        extraFields: {
+          233: "chronicHealthCondition",
+          234: "surgeries",
+          235: "testsProcedures",
+          243: "appearInCarePlan",
+          236: "fluShots",
+          237: "pneumoniaShots",
+          238: "tetanusShots",
+          239: "covidShots",
+          240: "breast",
+          241: "colon",
+          242: "awv",
+          247: "allergiesInCarePlan",
+          248: "pa_testing",
+          249: "pa_employment",
+          250: "pa_composition",
+          251: "pa_evaluation",
+          252: "pa_threat",
+          253: "fa_living",
+          254: "fa_caregiver",
+          255: "chronicCondOne",
+          256: "prognosisOne",
+          257: "prognosisDescOne",
+          258: "symptomManageOne",
+          259: "measurableGoalsOne",
+          260: "interventionOne",
+          261: "coordinationCareOne",
+          262: "chronicCondTwo",
+          263: "prognosisTwo",
+          264: "prognosisDescTwo",
+          265: "symptomManageTwo",
+          266: "measureableGoalsTwo",
+          267: "interventionTwo",
+          268: "coordinationCareTwo",
+          270: "communityServicesOrdered",
+          271: "communityServicesExplain",
+          272: "medicationReview",
+          273: "medicationCompleted",
+          274: "careplanReviewed",
+          275: "careplanShared",
+          276: "reviewedBy",
+          277: "dateOfReview",
+        },
+        medication: {
+          7: "name",
+          9: "strength",
+          8: "frequency",
+          10: "active",
+          24: "notes",
+          21: "otc",
+        },
+        careGiver: {
+          7: "name",
+          9: "phoneNumber",
+          8: "relationship",
+        },
+        provider: {
+          6: "name",
+          10: "upcomingAppointment",
+          7: "specialty",
+          8: "officeNumber",
+        },
+        providerTwo: {
+          6: "name",
+          10: "upcomingAppointment",
+          7: "specialty",
+          8: "officeNumber",
+        },
+        patientMessage: {
+          7: "messageType",
+          8: "notes",
+          9: "action",
+          10: "date",
+        },
+        allergy: {
+          6: "drug",
+          7: "reaction",
+        },
+        condition: {
+          7: "condition",
+          8: "goals",
+        },
+      };
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const userAgent = "OnboardingCodePage";
+
+      const params = {
+        appToken: urlParams.get("appToken"),
+        carePlanId: urlParams.get("carePlanId"),
+        carePlanDbid: urlParams.get("carePlanDbid"),
+        medicationsDbid: urlParams.get("medicationsDbid"),
+        caregiversDbid: urlParams.get("caregiversDbid"),
+        providersDbid: urlParams.get("providersDbid"),
+        providersTwoDbid: "bt6duthfc",
+        allergiesDbid: "brxxaknim",
+        messagesDbid: urlParams.get("messagesDbid"),
+        conditionsDbid: urlParams.get("conditionsDbid"),
+      };
+
+      if (Object.values(params).some((x) => !x)) {
+        throw new Error("Missing url parameters");
+      }
+
+      const TableInfos = {
+        carePlan: {
+          table: params.carePlanDbid,
+          columns: [8, 25, 30, 28, 29, 41, 42, 55, 27, 22, 20, 69, 70, 71],
+          query: `{3.EX.${params.carePlanId}}`,
+        },
+        extra: {
+          table: params.carePlanDbid,
+          columns: [
+            233, 234, 235, 243, 236, 237, 238, 239, 240, 241, 242, 247, 248,
+            249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261,
+            262, 263, 264, 265, 266, 267, 268, 271, 272, 273, 274, 275, 276,
+            277, 278,
+          ],
+          query: `{3.EX.${params.carePlanId}}`,
+        },
+        medications: {
+          table: params.medicationsDbid,
+          columns: [7, 9, 8, 10, 24, 21],
+          query: `{6.EX.${params.carePlanId}}`,
+        },
+        caregivers: {
+          table: params.caregiversDbid,
+          columns: [7, 9, 8],
+          query: `{6.EX.${params.carePlanId}}`,
+        },
+        providers: {
+          table: params.providersDbid,
+          columns: [6, 10, 7, 8],
+          query: `{16.EX.${params.carePlanId}}AND{17.EX.1}`,
+        },
+        providersTwo: {
+          table: params.providersTwoDbid,
+          columns: [6, 10, 7, 8],
+          query: `{27.EX.${params.carePlanId}}AND{28.EX.1}`,
+        },
+        patientMessages: {
+          table: params.messagesDbid,
+          columns: [7, 8, 9, 10],
+          query: `{6.EX.${params.carePlanId}}`,
+        },
+        conditions: {
+          table: params.conditionsDbid,
+          columns: [7, 8],
+          query: `{6.EX.${params.carePlanId}}`,
+        },
+        allergies: {
+          table: params.allergiesDbid,
+          columns: [6, 7],
+          query: `{8.EX.${params.carePlanId}}`,
+        },
+      };
+
+      class DataRetriever {
+        static async getCarePlan() {
+          return queryQuickbase(TableInfos.carePlan);
+        }
+        static async getExtras() {
+          return queryQuickbase(TableInfos.extra);
+        }
+        static async getMedications() {
+          return queryQuickbase(TableInfos.medications);
+        }
+        static async getCareGivers() {
+          return queryQuickbase(TableInfos.caregivers);
+        }
+        static async getProviders() {
+          return queryQuickbase(TableInfos.providers);
+        }
+        static async getProvidersTwo() {
+          return queryQuickbase(TableInfos.providersTwo);
+        }
+        static async getPatientMessages() {
+          return queryQuickbase(TableInfos.patientMessages);
+        }
+        static async getConditions() {
+          return queryQuickbase(TableInfos.conditions);
+        }
+        static async getAllergies() {
+          return queryQuickbase(TableInfos.allergies);
+        }
+      }
+
+      const app = createApp({
+        setup() {
+          const loading = ref(false);
+          // Defining the page structure
+          const headerFields = ref([
+            {
+              label: "Patient Name",
+              propertyName: "name",
+            },
+            {
+              label: "DOB",
+              propertyName: "dateOfBirth",
+            },
+            {
+              label: "ICD 10",
+              propertyName: "icdTen",
+            },
+            {
+              label: "Pharmacy Name",
+              propertyName: "pharmacyName",
+            },
+            {
+              label: "Pharmacy Number",
+              propertyName: "pharmacyPhoneNumber",
+            },
+            {
+              label: "Activity",
+              propertyName: "activityName",
+            },
+            {
+              label: "Date of Service",
+              propertyName: "activityLastWorkDate",
+            },
+            {
+              label: "Care Manager",
+              propertyName: "activityAssignedTo",
+            },
+          ]);
+          const extraColumns = ref([
+            {
+              label: "Category",
+              propertyName: "category",
+            },
+            {
+              label: "Description",
+              propertyName: "codes",
+            },
+          ]);
+          const preventativeColumns = ref([
+            {
+              label: "Vaccination",
+              propertyName: "first",
+            },
+            {
+              label: "Cancer Screenings",
+              propertyName: "second",
+            },
+            {
+              label: "Annual Wellness Visit",
+              propertyName: "third",
+            },
+          ]);
+          const psychosocialColumns = ref([
+            {
+              label: "Category",
+              propertyName: "category",
+            },
+            {
+              label: "Value",
+              propertyName: "value",
+            },
+          ]);
+          const careGiversTableColumns = ref([
+            {
+              label: "Name",
+              propertyName: "name",
+            },
+            {
+              label: "Relationship",
+              propertyName: "relationship",
+            },
+            {
+              label: "Contact #",
+              propertyName: "phoneNumber",
+            },
+          ]);
+          const inactiveMedsTableColumns = ref([
+            {
+              label: "Name",
+              propertyName: "name",
+            },
+            {
+              label: "Frequency",
+              propertyName: "frequency",
+            },
+            {
+              label: "Strength",
+              propertyName: "strength",
+            },
+            {
+              label: "Additional Notes",
+              propertyName: "notes",
+            },
+          ]);
+          const otcMedsTableColumns = ref([
+            {
+              label: "Name",
+              propertyName: "name",
+            },
+            {
+              label: "Frequency",
+              propertyName: "frequency",
+            },
+            {
+              label: "Strength",
+              propertyName: "strength",
+            },
+            {
+              label: "Additional Notes",
+              propertyName: "notes",
+            },
+          ]);
+          const medicationsTableColumns = ref([
+            {
+              label: "Name",
+              propertyName: "name",
+            },
+            {
+              label: "Frequency",
+              propertyName: "frequency",
+            },
+            {
+              label: "Strength",
+              propertyName: "strength",
+              width: "300px",
+            },
+            {
+              label: "Additional Notes",
+              propertyName: "notes",
+            },
+          ]);
+          const providersTableColumns = ref([
+            {
+              label: "Name",
+              propertyName: "name",
+            },
+            {
+              label: "Specialty",
+              propertyName: "specialty",
+            },
+            {
+              label: "Upcoming Appt.",
+              propertyName: "upcomingAppointment",
+            },
+            {
+              label: "Office Number",
+              propertyName: "officeNumber",
+            },
+          ]);
+          const scheduleTableColumns = ref([
+            {
+              label: "Last Office Visit",
+              propertyName: "lastOfficeVisit",
+            },
+            {
+              label: "Next Office Visit",
+              propertyName: "nextOfficeVisit",
+            },
+          ]);
+          const conditionsTableColumns = ref([
+            {
+              label: "Condition",
+              propertyName: "condition",
+            },
+            {
+              label: "Goals",
+              propertyName: "goals",
+            },
+          ]);
+          const patientMessagesTableColumns = ref([
+            {
+              label: "Patient Request",
+              propertyName: "messageType",
+            },
+            {
+              label: "Action",
+              propertyName: "action",
+            },
+            {
+              label: "Notes",
+              propertyName: "notes",
+            },
+          ]);
+          const generalQuestionTablecolumns = ref([
+            {
+              label: "Question",
+              propertyName: "question",
+            },
+            {
+              label: "Answer",
+              propertyName: "answer",
+            },
+          ]);
+          const notesColumns = ref([
+            {
+              label: "Additional Notes",
+              propertyName: "notes",
+            },
+          ]);
+          const allergiesTableColumns = ref([
+            {
+              label: "Drug",
+              propertyName: "drug",
+            },
+            {
+              label: "Reaction",
+              propertyName: "reaction",
+            },
+          ]);
+
+          // TABLE DATA
+          const carePlanData = ref();
+          const medications = ref([]);
+          const careGivers = ref([]);
+          const providers = ref([]);
+          const inactiveMeds = ref([]);
+          const otcMeds = ref([]);
+          const conditions = ref([]);
+          const patientMessages = ref([]);
+          const generalQuestions = ref([]);
+          const extras = ref([]);
+          const preventative = ref([]);
+          const psychosocial = ref([]);
+          const allergies = ref([]);
+          const functionalAssessment = ref([]);
+          const chronicOneCodes = ref([]);
+          const chronicTwoCodes = ref([]);
+          const services = ref([]);
+          const medicationReview = ref([]);
+          const careplanReviewed = ref([]);
+          const careplanReviewedBy = ref([]);
+
+          const headerData = computed(() => {
+            if (!carePlanData.value) return null;
+            return {
+              ...carePlanData.value,
+            };
+          });
+
+          async function loadData() {
+            try {
+              loading.value = true;
+
+              carePlanData.value = QuickBaseUtils.parseObjectsFromResponse(
+                await DataRetriever.getCarePlan(),
+                FieldMaps.carePlan
+              )[0];
+
+              let carePlanMessages = QuickBaseUtils.parseObjectsFromResponse(
+                await DataRetriever.getPatientMessages(),
+                FieldMaps.patientMessage
+              );
+
+              patientMessages.value = carePlanMessages.filter(
+                (m) => m.date == carePlanData.value.activityLastWorkDate
+              );
+
+              if (carePlanData.value.activityAssignedTo) {
+                carePlanData.value.activityAssignedTo =
+                  carePlanData.value.activityAssignedTo.name;
+              }
+
+              if (carePlanData.value.dateOfBirth) {
+                carePlanData.value.dateOfBirth = formatDate(
+                  carePlanData.value.dateOfBirth
+                );
+              }
+
+              if (carePlanData.value.lastOfficeVisit) {
+                carePlanData.value.lastOfficeVisit = formatDate(
+                  carePlanData.value.lastOfficeVisit
+                );
+              }
+
+              if (carePlanData.value.activityLastWorkDate) {
+                carePlanData.value.activityLastWorkDate = formatDate(
+                  carePlanData.value.activityLastWorkDate
+                );
+              }
+
+              carePlanData.value.nextOfficeVisit = carePlanData.value
+                .nextOfficeVisit
+                ? formatDate(carePlanData.value.nextOfficeVisit)
+                : "No upcoming office visit";
+
+              generalQuestions.value = [
+                {
+                  question:
+                    "In the last 12 months, have you been to the emergency room? If so, why?",
+                  answer: carePlanData.value.emergencyRoom,
+                },
+                {
+                  question: "Do you use any assistive devices?",
+                  answer: carePlanData.value.assistiveDevices,
+                },
+              ];
+
+              medications.value = QuickBaseUtils.parseObjectsFromResponse(
+                await DataRetriever.getMedications(),
+                FieldMaps.medication
+              );
+
+              inactiveMeds.value = medications.value.filter((m) => !m.active);
+
+              otcMeds.value = medications.value.filter(
+                (m) => m.otc && m.active
+              );
+
+              medications.value = medications.value.filter(
+                (m) => m.active && !m.otc
+              );
+
+              careGivers.value = QuickBaseUtils.parseObjectsFromResponse(
+                await DataRetriever.getCareGivers(),
+                FieldMaps.careGiver
+              );
+
+              providersOneRes = QuickBaseUtils.parseObjectsFromResponse(
+                await DataRetriever.getProviders(),
+                FieldMaps.provider
+              );
+
+              providersTwoRes = QuickBaseUtils.parseObjectsFromResponse(
+                await DataRetriever.getProvidersTwo(),
+                FieldMaps.provider
+              );
+
+              providers.value = [...providersOneRes, ...providersTwoRes];
+
+              for (let i = 0; i < providers.value.length; i++) {
+                providers.value[i].upcomingAppointment = providers.value[i]
+                  .upcomingAppointment
+                  ? formatDate(providers.value[i].upcomingAppointment)
+                  : "No upcoming office visit";
+              }
+
+              allergies.value = QuickBaseUtils.parseObjectsFromResponse(
+                await DataRetriever.getAllergies(),
+                FieldMaps.allergy
+              );
+
+              conditions.value = QuickBaseUtils.parseObjectsFromResponse(
+                await DataRetriever.getConditions(),
+                FieldMaps.condition
+              );
+
+              conditions.value = conditions.value.map((obj) => {
+                let rObj = {
+                  condition: obj.condition,
+                  goals: multiSelectFix(obj.goals),
+                };
+                return rObj;
+              });
+
+              extrasTemp = QuickBaseUtils.parseObjectsFromResponse(
+                await DataRetriever.getExtras(),
+                FieldMaps.extraFields
+              );
+
+              console.log(extrasTemp);
+
+              extras.value = [
+                {
+                  category: "Chronic Health Conditions",
+                  codes: extrasTemp[0]["chronicHealthCondition"],
+                },
+                {
+                  category: "Surgeries",
+                  codes: extrasTemp[0]["surgeries"],
+                },
+                {
+                  category: "Test and Procedures",
+                  codes: extrasTemp[0]["testsProcedures"],
+                },
+              ];
+
+              preventative.value = [
+                {
+                  first: "Flu: " + extrasTemp[0]["fluShots"],
+                  second: "Breast: " + extrasTemp[0]["breast"],
+                  third: "AWV: " + extrasTemp[0]["awv"],
+                },
+                {
+                  first: "Pneumonia: " + extrasTemp[0]["pneumoniaShots"],
+                  second: "Colon: " + extrasTemp[0]["colon"],
+                  third: "",
+                },
+                {
+                  first: "Tetanus: " + extrasTemp[0]["tetanusShots"],
+                  second: "",
+                  third: "",
+                },
+                {
+                  first: "Covid-19: " + extrasTemp[0]["covidShots"],
+                  second: "",
+                  third: "",
+                },
+              ];
+
+              psychosocial.value = [
+                {
+                  category: "Psychological and Neuropsychological Testing",
+                  value: extrasTemp[0]["pa_testing"],
+                },
+                {
+                  category: "Current Employment Status",
+                  value: extrasTemp[0]["pa_employment"],
+                },
+                {
+                  category: "Household Composition",
+                  value: extrasTemp[0]["pa_composition"],
+                },
+                {
+                  category: "Environmental Evaluation",
+                  value: extrasTemp[0]["pa_evaluation"],
+                },
+                {
+                  category: "Threats of Violence/Injury",
+                  value: extrasTemp[0]["pa_threat"],
+                },
+              ];
+
+              functionalAssessment.value = [
+                {
+                  category: "Activities of Daily Living",
+                  value: extrasTemp[0]["fa_living"],
+                },
+                {
+                  category: "Caregiver Assessment",
+                  value: extrasTemp[0]["fa_caregiver"],
+                },
+              ];
+
+              chronicOneCodes.value = [
+                {
+                  category: "Chronic Condition #1",
+                  value: extrasTemp[0]["chronicCondOne"],
+                },
+                {
+                  category: "Prognosis",
+                  value: extrasTemp[0]["prognosisOne"],
+                },
+                {
+                  category: "Prognosis Description",
+                  value: extrasTemp[0]["prognosisDescOne"],
+                },
+                {
+                  category: "Symptom Management",
+                  value: extrasTemp[0]["symptomManageOne"],
+                },
+                {
+                  category: "Measureable Treatment Goals",
+                  value: extrasTemp[0]["measurableGoalsOne"],
+                },
+                {
+                  category: "Planned Interventions",
+                  value: extrasTemp[0]["interventionOne"],
+                },
+                {
+                  category: "Coordination of Care",
+                  value: extrasTemp[0]["coordinationCareOne"],
+                },
+              ];
+
+              chronicTwoCodes.value = [
+                {
+                  category: "Chronic Condition #2",
+                  value: extrasTemp[0]["chronicCondTwo"],
+                },
+                {
+                  category: "Prognosis",
+                  value: extrasTemp[0]["prognosisTwo"],
+                },
+                {
+                  category: "Prognosis Description",
+                  value: extrasTemp[0]["prognosisDescTwo"],
+                },
+                {
+                  category: "Symptom Management",
+                  value: extrasTemp[0]["symptomManageTwo"],
+                },
+                {
+                  category: "Measureable Treatment Goals",
+                  value: extrasTemp[0]["measureableGoalsTwo"],
+                },
+                {
+                  category: "Planned Interventions",
+                  value: extrasTemp[0]["interventionTwo"],
+                },
+                {
+                  category: "Coordination of Care",
+                  value: extrasTemp[0]["coordinationCareTwo"],
+                },
+              ];
+
+              services.value = [
+                {
+                  category: "Yes or None",
+                  value: extrasTemp[0]["communityServicesOrdered"],
+                },
+                {
+                  category: "If Yes, Explain",
+                  value: "",
+                },
+              ];
+
+              medicationReview.value = [
+                {
+                  category: "Yes or None",
+                  value: extrasTemp[0]["medicationReview"],
+                },
+                {
+                  category: "Medication Reconciliation Last Completed On",
+                  value: extrasTemp[0]["medicationCompleted"],
+                },
+              ];
+
+              careplanReviewed.value = [
+                {
+                  category: "Yes or None",
+                  value: extrasTemp[0]["careplanReviewed"],
+                },
+                {
+                  category: "Care Plan Reviewed and Shared On",
+                  value: extrasTemp[0]["careplanShared"],
+                },
+              ];
+
+              careplanReviewedBy.value = [
+                {
+                  category: "Provider",
+                  value: extrasTemp[0]["reviewedBy"],
+                },
+                {
+                  category: "Date of Review",
+                  value: extrasTemp[0]["dateOfReview"],
+                },
+              ];
+
+              if (extrasTemp[0]["appearInCarePlan"] == true) {
+                document.getElementById("extraTableID").style.display = "block";
+              }
+
+              if (extrasTemp[0]["allergiesInCarePlan"] == true) {
+                document.getElementById("allergiesTable").style.display =
+                  "block";
+              }
+
+              loading.value = false;
+            } catch (e) {
+              window.alert("There was an error loading data: " + e);
+              loading.value = false;
+            }
+          }
+
+          onMounted(() => {
+            loadData();
+          });
+
+          return {
+            loading,
+            headerFields,
+            medicationsTableColumns,
+            inactiveMedsTableColumns,
+            otcMedsTableColumns,
+            careGiversTableColumns,
+            providersTableColumns,
+            scheduleTableColumns,
+            conditionsTableColumns,
+            allergiesTableColumns,
+            patientMessagesTableColumns,
+            generalQuestionTablecolumns,
+            preventativeColumns,
+            psychosocialColumns,
+            extraColumns,
+            notesColumns,
+            carePlanData,
+            headerData,
+            medications,
+            inactiveMeds,
+            otcMeds,
+            careGivers,
+            providers,
+            conditions,
+            patientMessages,
+            generalQuestions,
+            extras,
+            preventative,
+            psychosocial,
+            allergies,
+            functionalAssessment,
+            chronicOneCodes,
+            chronicTwoCodes,
+            services,
+            medicationReview,
+            careplanReviewed,
+            careplanReviewedBy,
+          };
+        },
+      });
+
+      // Give the common file the chance to extend vue
+      setupCommon(app);
+
+      app.mount("#app");
+    </script>
+  </body>
+</html>

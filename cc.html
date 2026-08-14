@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Care Coordination Care Plan</title>
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/bootstrap@5.1.1/dist/css/bootstrap.min.css"
+    />
+    <script src="https://unpkg.com/vue@3.2.20/dist/vue.global.js"></script>
+
+    <script src="https://elenchos.quickbase.com/db/brhfzywuv?a=dbpage&pageID=11"></script>
+
+    <!-- <script src="../common/common.js"></script>
+  <script src="./testdata.js"></script> -->
+    <!-- <script src="./nodata.js"></script> -->
+
+    <style>
+      .weird-table thead tr:not(:first-child) {
+        display: none;
+      }
+
+      .weird-table > table > tbody > tr > td:first-child {
+        font-weight: bold;
+        width: 200px;
+      }
+
+      .weird-table > table > tbody > tr > td:not(:first-child) {
+        padding: 0;
+      }
+
+      .weird-table-child-header {
+        background-color: #fff5b1;
+      }
+
+      .logo {
+        width: 150px;
+      }
+
+      .noteTable > table > thead > tr:nth-child(2) > th:nth-child(4) {
+        width: 40%;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="app">
+      <b-app>
+        <b-loader v-if="loading"></b-loader>
+        <b-header
+          :fields="headerFields"
+          :data="headerData"
+          :logo-url="carePlanData && carePlanData.practiceLogoUrl"
+        >
+        </b-header>
+        <div style="padding: 0 10px">
+          <h3 class="text-center">Care Coordination Care Plan</h3>
+
+          <div id="extraTableID" style="display: none">
+            <b-table
+              title="Complete Problem List"
+              type="purple"
+              :columns="extraColumns"
+              :rows="extras"
+            >
+            </b-table>
+
+            <b-table
+              title="Preventative Care"
+              type="green"
+              :columns="preventativeColumns"
+              :rows="preventative"
+            >
+            </b-table>
+          </div>
+
+          <b-table
+            type="blue-purple"
+            :columns="scheduleTableColumns"
+            :rows="carePlanData ? [carePlanData] : null"
+          >
+          </b-table>
+          <b-table
+            title="Patient Caregiver/DPOA"
+            type="green"
+            :columns="careGiversTableColumns"
+            :rows="careGivers"
+          ></b-table>
+          <b-table
+            title="Medications"
+            type="light-blue"
+            :columns="medicationsTableColumns"
+            :rows="medications"
+            class="noteTable"
+          >
+            <template #empty-state>No Active Medications</template>
+          </b-table>
+          <b-table
+            title="Inactive Medications"
+            type="orange"
+            v-if="inactiveMeds.length > 0"
+            :columns="inactiveMedsTableColumns"
+            :rows="inactiveMeds"
+            class="noteTable"
+          >
+          </b-table>
+          <b-table
+            title="OTC Medications"
+            type="jade"
+            v-if="otcMeds.length > 0"
+            :columns="otcMedsTableColumns"
+            :rows="otcMeds"
+            class="noteTable"
+          >
+          </b-table>
+
+          <div id="allergiesTable" style="display: none">
+            <b-table
+              title="Drug Allergies"
+              type="yellow"
+              :columns="allergiesTableColumns"
+              :rows="allergies"
+            >
+            </b-table>
+          </div>
+
+          <b-table
+            title="Providers"
+            type="pink-purple"
+            :columns="providersTableColumns"
+            :rows="providers"
+          >
+          </b-table>
+          <b-table
+            v-for="(tableRows, idx) in weirdTableData"
+            :title="'Provider ' + (idx + 1)"
+            class="weird-table"
+            type="purple"
+            :columns="testColumns"
+            :rows="tableRows"
+          >
+            <template #cell-value="{ column, row }">
+              <div v-if="typeof row.value === 'object'">
+                <table>
+                  <tbody>
+                    <tr>
+                      <td colspan="2">{{ row.value.planOfCare }}</td>
+                    </tr>
+                    <tr>
+                      <td
+                        class="border-top border-end fw-bold weird-table-child-header"
+                        width="150"
+                      >
+                        Plan of Care Date:
+                      </td>
+                      <td class="border-top">{{ row.value.date }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div v-else>{{ row.value }}</div>
+            </template>
+          </b-table>
+        </div>
+      </b-app>
+    </div>
+    <script>
+      const { ref, computed, createApp, onMounted } = Vue;
+
+      // Define the data structure
+      const FieldMaps = {
+        carePlan: {
+          8: "name",
+          25: "dateOfBirth",
+          30: "icdTen",
+          28: "lastOfficeVisit",
+          29: "nextOfficeVisit",
+          41: "pharmacyName",
+          42: "pharmacyPhoneNumber",
+          55: "practiceLogoUrl",
+          27: "activityName",
+          22: "activityAssignedTo",
+          20: "activityLastWorkDate",
+        },
+        extraFields: {
+          233: "chronicHealthCondition",
+          234: "surgeries",
+          235: "testsProcedures",
+          243: "appearInCarePlan",
+          236: "fluShots",
+          237: "pneumoniaShots",
+          238: "tetanusShots",
+          239: "covidShots",
+          240: "breast",
+          241: "colon",
+          242: "awv",
+        },
+        medication: {
+          7: "name",
+          9: "strength",
+          8: "frequency",
+          10: "active",
+          21: "otc",
+        },
+        careGiver: {
+          7: "name",
+          9: "phoneNumber",
+          8: "relationship",
+        },
+        provider: {
+          6: "name",
+          10: "upcomingAppointment",
+          7: "specialty",
+        },
+        providerTwo: {
+          6: "name",
+          10: "upcomingAppointment",
+          7: "specialty",
+          8: "officeNumber",
+        },
+        allergy: {
+          6: "drug",
+          7: "reaction",
+        },
+      };
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const userAgent = "OnboardingCodePage";
+
+      const params = {
+        appToken: urlParams.get("appToken"),
+        carePlanId: urlParams.get("carePlanId"),
+        carePlanDbid: urlParams.get("carePlanDbid"),
+        medicationsDbid: urlParams.get("medicationsDbid"),
+        caregiversDbid: urlParams.get("caregiversDbid"),
+        providersDbid: urlParams.get("providersDbid"),
+        providersTwoDbid: "bt6duthfc",
+        allergiesDbid: "brxxaknim",
+      };
+
+      if (Object.values(params).some((x) => !x)) {
+        alert("Missing url parameters");
+      }
+
+      const TableInfos = {
+        carePlan: {
+          table: params.carePlanDbid,
+          columns: [8, 25, 30, 28, 29, 41, 42, 55, 27, 22, 20],
+          query: `{3.EX.${params.carePlanId}}`,
+        },
+        extra: {
+          table: params.carePlanDbid,
+          columns: [233, 234, 235, 243, 236, 237, 238, 239, 240, 241, 242],
+          query: `{3.EX.${params.carePlanId}}`,
+        },
+        medications: {
+          table: params.medicationsDbid,
+          columns: [7, 9, 8, 10, 21],
+          query: `{6.EX.${params.carePlanId}}`,
+        },
+        caregivers: {
+          table: params.caregiversDbid,
+          columns: [7, 9, 8],
+          query: `{6.EX.${params.carePlanId}}`,
+        },
+        providers: {
+          table: params.providersDbid,
+          columns: [6, 7, 8, 9, 10, 11, 12, 13, 14, 18, 21, 22],
+          query: `{16.EX.${params.carePlanId}}AND{17.EX.1}`,
+        },
+        providersTwo: {
+          table: params.providersTwoDbid,
+          columns: [6, 7, 8, 9, 10, 11, 12, 13, 14, 17, 18, 19],
+          query: `{27.EX.${params.carePlanId}}AND{28.EX.1}`,
+        },
+        allergies: {
+          table: params.allergiesDbid,
+          columns: [6, 7],
+          query: `{8.EX.${params.carePlanId}}`,
+        },
+      };
+
+      class DataRetriever {
+        static async getCarePlan() {
+          return queryQuickbase(TableInfos.carePlan);
+        }
+        static async getExtras() {
+          return queryQuickbase(TableInfos.extra);
+        }
+        static async getMedications() {
+          return queryQuickbase(TableInfos.medications);
+        }
+        static async getCareGivers() {
+          return queryQuickbase(TableInfos.caregivers);
+        }
+        static async getProviders() {
+          return queryQuickbase(TableInfos.providers);
+        }
+        static async getProvidersTwo() {
+          return queryQuickbase(TableInfos.providersTwo);
+        }
+        static async getAllergies() {
+          return queryQuickbase(TableInfos.allergies);
+        }
+      }
+
+      const app = createApp({
+        setup() {
+          const loading = ref(false);
+          // Defining the page structure
+          const headerFields = ref([
+            {
+              label: "Patient Name",
+              propertyName: "name",
+            },
+            {
+              label: "DOB",
+              propertyName: "dateOfBirth",
+            },
+            {
+              label: "ICD 10",
+              propertyName: "icdTen",
+            },
+            {
+              label: "Pharmacy Name",
+              propertyName: "pharmacyName",
+            },
+            {
+              label: "Pharmacy Number",
+              propertyName: "pharmacyPhoneNumber",
+            },
+            {
+              label: "Activity",
+              propertyName: "activityName",
+            },
+            {
+              label: "Date of Service",
+              propertyName: "activityLastWorkDate",
+            },
+            {
+              label: "Care Manager",
+              propertyName: "activityAssignedTo",
+            },
+          ]);
+          const testColumns = ref([
+            {
+              label: "Name",
+              propertyName: "name",
+            },
+            {
+              label: "Value",
+              propertyName: "value",
+            },
+          ]);
+          const extraColumns = ref([
+            {
+              label: "Category",
+              propertyName: "category",
+            },
+            {
+              label: "Description",
+              propertyName: "codes",
+            },
+          ]);
+          const preventativeColumns = ref([
+            {
+              label: "Vaccination",
+              propertyName: "first",
+            },
+            {
+              label: "Cancer Screenings",
+              propertyName: "second",
+            },
+            {
+              label: "Annual Wellness Visit",
+              propertyName: "third",
+            },
+          ]);
+          const careGiversTableColumns = ref([
+            {
+              label: "Name",
+              propertyName: "name",
+            },
+            {
+              label: "Relationship",
+              propertyName: "relationship",
+            },
+            {
+              label: "Contact #",
+              propertyName: "phoneNumber",
+            },
+          ]);
+          const medicationsTableColumns = ref([
+            {
+              label: "Name",
+              propertyName: "name",
+            },
+            {
+              label: "Frequency",
+              propertyName: "frequency",
+            },
+            {
+              label: "Strength",
+              propertyName: "strength",
+            },
+          ]);
+          const inactiveMedsTableColumns = ref([
+            {
+              label: "Name",
+              propertyName: "name",
+            },
+            {
+              label: "Frequency",
+              propertyName: "frequency",
+            },
+            {
+              label: "Strength",
+              propertyName: "strength",
+            },
+          ]);
+          const otcMedsTableColumns = ref([
+            {
+              label: "Name",
+              propertyName: "name",
+            },
+            {
+              label: "Frequency",
+              propertyName: "frequency",
+            },
+            {
+              label: "Strength",
+              propertyName: "strength",
+            },
+          ]);
+          const providersTableColumns = ref([
+            {
+              label: "Name",
+              propertyName: "name",
+            },
+            {
+              label: "Specialty",
+              propertyName: "specialty",
+            },
+            {
+              label: "Upcoming Appt.",
+              propertyName: "upcomingAppointment",
+            },
+          ]);
+          const scheduleTableColumns = ref([
+            {
+              label: "Last Office Visit",
+              propertyName: "lastOfficeVisit",
+            },
+            {
+              label: "Next Office Visit",
+              propertyName: "nextOfficeVisit",
+            },
+          ]);
+          const allergiesTableColumns = ref([
+            {
+              label: "Drug",
+              propertyName: "drug",
+            },
+            {
+              label: "Reaction",
+              propertyName: "reaction",
+            },
+          ]);
+
+          function transformProviders(originalProviders) {
+            const idToColumnName = {
+              6: "Provider Name",
+              7: "Provider Specialty",
+              8: "Provider Number",
+              9: "Provider Fax",
+              10: "Next Office Visit",
+              11: "Last Office Visit",
+              12: "Office Contact",
+              14: "Plan of Care Date",
+              13: "Plan of Care",
+              18: "Fax Received On",
+              21: "Consult note received from",
+              22: "Office Notes",
+            };
+            return originalProviders.map((row) => {
+              const rows = [];
+              const fieldIds = TableInfos.providers.columns;
+
+              for (let id of fieldIds) {
+                if (row[id].value != "") {
+                  let value = row[id] && row[id].value;
+
+                  rows.push({
+                    name: idToColumnName[id],
+                    value: value,
+                  });
+                }
+              }
+              return rows;
+            });
+          }
+
+          // TABLE DATA
+          const weirdTableData = ref([]);
+          const carePlanData = ref();
+          const medications = ref([]);
+          const inactiveMeds = ref([]);
+          const otcMeds = ref([]);
+          const careGivers = ref([]);
+          const providers = ref([]);
+          const extras = ref([]);
+          const allergies = ref([]);
+          const preventative = ref([]);
+
+          const headerData = computed(() => {
+            if (!carePlanData.value) return null;
+            return {
+              ...carePlanData.value,
+            };
+          });
+
+          async function loadData() {
+            try {
+              loading.value = true;
+              carePlanData.value = QuickBaseUtils.parseObjectsFromResponse(
+                await DataRetriever.getCarePlan(),
+                FieldMaps.carePlan
+              )[0];
+
+              if (carePlanData.value.activityAssignedTo) {
+                carePlanData.value.activityAssignedTo =
+                  carePlanData.value.activityAssignedTo.name;
+              }
+
+              if (carePlanData.value.dateOfBirth) {
+                carePlanData.value.dateOfBirth = formatDate(
+                  carePlanData.value.dateOfBirth
+                );
+              }
+
+              if (carePlanData.value.lastOfficeVisit) {
+                carePlanData.value.lastOfficeVisit = formatDate(
+                  carePlanData.value.lastOfficeVisit
+                );
+              }
+
+              if (carePlanData.value.activityLastWorkDate) {
+                carePlanData.value.activityLastWorkDate = formatDate(
+                  carePlanData.value.activityLastWorkDate
+                );
+              }
+
+              carePlanData.value.nextOfficeVisit = carePlanData.value
+                .nextOfficeVisit
+                ? formatDate(carePlanData.value.nextOfficeVisit)
+                : "No upcoming office visit";
+
+              medications.value = QuickBaseUtils.parseObjectsFromResponse(
+                await DataRetriever.getMedications(),
+                FieldMaps.medication
+              );
+
+              inactiveMeds.value = medications.value.filter((m) => !m.active);
+
+              otcMeds.value = medications.value.filter(
+                (m) => m.otc && m.active
+              );
+
+              medications.value = medications.value.filter(
+                (m) => m.active && !m.otc
+              );
+
+              careGivers.value = QuickBaseUtils.parseObjectsFromResponse(
+                await DataRetriever.getCareGivers(),
+                FieldMaps.careGiver
+              );
+              const rawProvidersOne = await DataRetriever.getProviders();
+              const rawProvidersTwo = await DataRetriever.getProvidersTwo();
+
+              let formattedProvidersTwo = [];
+              for (let i = 0; i < rawProvidersTwo.data.length; i++) {
+                let provider = {
+                  6: { value: rawProvidersTwo.data[i]["6"]["value"] },
+                  7: { value: rawProvidersTwo.data[i]["7"]["value"] },
+                  8: { value: rawProvidersTwo.data[i]["8"]["value"] },
+                  9: { value: rawProvidersTwo.data[i]["9"]["value"] },
+                  10: { value: rawProvidersTwo.data[i]["10"]["value"] },
+                  11: { value: rawProvidersTwo.data[i]["11"]["value"] },
+                  12: { value: rawProvidersTwo.data[i]["12"]["value"] },
+                  13: { value: rawProvidersTwo.data[i]["13"]["value"] },
+                  14: { value: rawProvidersTwo.data[i]["14"]["value"] },
+                  18: { value: rawProvidersTwo.data[i]["17"]["value"] },
+                  21: { value: rawProvidersTwo.data[i]["18"]["value"] },
+                  22: { value: rawProvidersTwo.data[i]["19"]["value"] },
+                };
+
+                formattedProvidersTwo.push(provider);
+              }
+
+              rawProviders = [
+                ...rawProvidersOne.data,
+                ...formattedProvidersTwo,
+              ];
+              console.log(rawProviders);
+
+              for (let i = 0; i < rawProviders.length; i++) {
+                rawProviders[i][10].value = rawProviders[i][10].value
+                  ? formatDate(rawProviders[i][10].value)
+                  : "No upcoming office visit";
+
+                rawProviders[i][11].value = formatDate(
+                  rawProviders[i][11].value
+                );
+                rawProviders[i][14].value = formatDate(
+                  rawProviders[i][14].value
+                );
+                rawProviders[i][18].value = formatDate(
+                  rawProviders[i][18].value
+                );
+              }
+
+              providersTwoRes = QuickBaseUtils.parseObjectsFromResponse(
+                await DataRetriever.getProvidersTwo(),
+                FieldMaps.provider
+              );
+
+              providersOneRes = QuickBaseUtils.parseObjectsFromResponse(
+                await DataRetriever.getProviders(),
+                FieldMaps.provider
+              );
+
+              providers.value = [...providersOneRes, ...providersTwoRes];
+
+              for (let i = 0; i < providers.value.length; i++) {
+                providers.value[i].upcomingAppointment = providers.value[i]
+                  .upcomingAppointment
+                  ? formatDate(providers.value[i].upcomingAppointment)
+                  : "No upcoming office visit";
+              }
+
+              weirdTableData.value = transformProviders(rawProviders);
+
+              allergies.value = QuickBaseUtils.parseObjectsFromResponse(
+                await DataRetriever.getAllergies(),
+                FieldMaps.allergy
+              );
+
+              extrasTemp = QuickBaseUtils.parseObjectsFromResponse(
+                await DataRetriever.getExtras(),
+                FieldMaps.extraFields
+              );
+
+              console.log(extrasTemp);
+
+              extras.value = [
+                {
+                  category: "Chronic Health Conditions",
+                  codes: extrasTemp[0]["chronicHealthCondition"],
+                },
+                {
+                  category: "Surgeries",
+                  codes: extrasTemp[0]["surgeries"],
+                },
+                {
+                  category: "Test and Procedures",
+                  codes: extrasTemp[0]["testsProcedures"],
+                },
+              ];
+
+              preventative.value = [
+                {
+                  first: "Flu: " + extrasTemp[0]["fluShots"],
+                  second: "Breast: " + extrasTemp[0]["breast"],
+                  third: "AWV: " + extrasTemp[0]["awv"],
+                },
+                {
+                  first: "Pneumonia: " + extrasTemp[0]["pneumoniaShots"],
+                  second: "Colon: " + extrasTemp[0]["colon"],
+                  third: "",
+                },
+                {
+                  first: "Tetanus: " + extrasTemp[0]["tetanusShots"],
+                  second: "",
+                  third: "",
+                },
+                {
+                  first: "Covid-19: " + extrasTemp[0]["covidShots"],
+                  second: "",
+                  third: "",
+                },
+              ];
+
+              console.log(preventative);
+
+              if (extrasTemp[0]["appearInCarePlan"] == true) {
+                document.getElementById("extraTableID").style.display = "block";
+              }
+
+              if (extrasTemp[0]["allergiesInCarePlan"] == true) {
+                document.getElementById("allergiesTable").style.display = "block";
+              }
+
+              loading.value = false;
+            } catch (e) {
+              window.alert("There was an error loading data: " + e);
+              console.error(e);
+              loading.value = false;
+            }
+          }
+
+          onMounted(() => {
+            loadData();
+          });
+
+          return {
+            loading,
+            headerFields,
+            testColumns,
+            medicationsTableColumns,
+            inactiveMedsTableColumns,
+            otcMedsTableColumns,
+            careGiversTableColumns,
+            allergiesTableColumns,
+            providersTableColumns,
+            scheduleTableColumns,
+            preventativeColumns,
+            extraColumns,
+            weirdTableData,
+            carePlanData,
+            headerData,
+            medications,
+            inactiveMeds,
+            otcMeds,
+            careGivers,
+            providers,
+            extras,
+            preventative,
+            allergies,
+          };
+        },
+      });
+
+      // Give the common file the chance to extend vue
+      setupCommon(app);
+
+      app.mount("#app");
+    </script>
+  </body>
+</html>
