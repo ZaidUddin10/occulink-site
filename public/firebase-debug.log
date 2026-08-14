@@ -1,0 +1,28 @@
+[debug] [2025-03-11T14:05:29.347Z] ----------------------------------------------------------------------
+[debug] [2025-03-11T14:05:29.351Z] Command:       /opt/homebrew/Cellar/node/23.3.0/bin/node /opt/homebrew/bin/firebase init
+[debug] [2025-03-11T14:05:29.351Z] CLI Version:   13.29.0
+[debug] [2025-03-11T14:05:29.351Z] Platform:      darwin
+[debug] [2025-03-11T14:05:29.351Z] Node Version:  v23.3.0
+[debug] [2025-03-11T14:05:29.352Z] Time:          Tue Mar 11 2025 09:05:29 GMT-0500 (Central Daylight Time)
+[debug] [2025-03-11T14:05:29.352Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-03-11T14:05:29.353Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2025-03-11T14:05:29.401Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-03-11T14:05:29.401Z] > authorizing via signed-in user (mzaiduddin@elenchoshealth.com)
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  /Users/zaid/Documents/Occulink/clinicare
+
+Before we get started, keep in mind:
+
+  * You are initializing within an existing Firebase project directory
+
+[debug] [2025-03-11T14:05:29.498Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2025-03-11T14:05:29.498Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
